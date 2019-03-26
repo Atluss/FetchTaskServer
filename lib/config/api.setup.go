@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
+	"github.com/Atluss/FetchTaskServer/lib"
 	"github.com/gorilla/mux"
 	"github.com/nats-io/go-nats"
 	"time"

@@ -3,10 +3,9 @@ package v1api
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
-	"github.com/Atluss/Go-Nats-Api-Example/lib/api"
-	"github.com/Atluss/Go-Nats-Api-Example/lib/config"
-	"github.com/gorilla/mux"
+	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/lib/api"
+	"github.com/Atluss/FetchTaskServer/lib/config"
 	"github.com/nats-io/go-nats"
 	"log"
 	"net/http"
@@ -14,15 +13,10 @@ import (
 	"time"
 )
 
-type User struct {
-	Id   string
-	Name string
-}
-
 // NewEndPointV1Test constructor for /v1/test/{id}
 func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 
-	url := fmt.Sprintf("/%s/test/{id}", V1ApiQueue)
+	url := fmt.Sprintf("/%s/fetch", V1ApiQueue)
 
 	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
 		return nil, err
@@ -38,44 +32,79 @@ func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 }
 
 type v1get struct {
+	ApiRequest
 	Setup *config.Setup
 	Url   string
+}
+
+type User struct {
+	Id   string
+	Name string
+}
+
+type v1getAnswer struct {
+	request *ReqFetch
+	reply   *ReplayFetch
 }
 
 // Request setup mux answer
 func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
-	vars := mux.Vars(r)
-	myUser := User{Id: vars["id"]}
+	fErr := false
+	req := &v1getAnswer{
+		request: &ReqFetch{},
+		reply:   &ReplayFetch{},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// decode request body
+	if err := req.request.Decode(r); err != nil {
+		fErr = true
+	}
+
+	// validate if decode is ok
+	if !fErr {
+		if err := req.request.Validate(); err != nil {
+			fErr = true
+			log.Printf("error: validate '%s' request %+v", err, req.request)
+		}
+	}
+
+	if fErr {
+		req.reply.Ok = SyntaxError
+		w.WriteHeader(400)
+		lib.LogOnError(req.reply.Encode(w), "warning")
+		return
+	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-
 	go func() {
 
-		data, err := json.Marshal(&myUser)
-		if err != nil || len(myUser.Id) == 0 {
-			lib.LogOnError(err, "warning: Problem with parsing the user Id: %s")
-			w.WriteHeader(500)
-			return
+		data, err := json.Marshal(&req.request)
+		if err != nil {
+			req.reply.Ok = SyntaxError
+			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing request: %s", obj.Url))
+			w.WriteHeader(400)
+			fErr = true
 		}
 
-		msg, err := obj.Setup.Nats.Request(obj.Url, data, 100*time.Millisecond)
-		if err == nil && msg != nil {
+		if !fErr {
+			msg, err := obj.Setup.Nats.Request(obj.Url, data, 100*time.Millisecond)
 
-			myUserWithName := User{}
-
-			err := json.Unmarshal(msg.Data, &myUserWithName)
-			log.Printf("==== %+v", myUserWithName)
-
-			if err == nil {
-				myUser = myUserWithName
+			if err == nil && msg != nil {
+				err := json.Unmarshal(msg.Data, &req.reply)
+				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer request %s", obj.Url)) {
+					req.reply.Ok = SyntaxError
+				} else {
+					req.reply.Ok = Ok
+				}
 			}
-
-			w.Header().Set("Content-Type", "application/json")
-
-			lib.LogOnError(json.NewEncoder(w).Encode(myUserWithName), "warning")
 		}
+
+		log.Printf("Answer: %+v: for request: %+v", req.reply, req.request)
+		lib.LogOnError(req.reply.Encode(w), "warning")
 		wg.Done()
 
 	}()
@@ -86,27 +115,26 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 // NatsQueue add new queue
 func (obj *v1get) NatsQueue(m *nats.Msg) {
 
-	users := map[string]string{
-		"1": "Ilya",
-		"2": "Yana",
-		"3": "Olga",
-		"4": "Shokin",
+	answer := ReplayFetch{
+		Body: ReplayBodyFetch{
+			ID:         1,
+			StatusHttp: 200,
+			Headers:    "===",
+			Length:     123,
+		},
 	}
 
-	myUser := User{}
-	err := json.Unmarshal(m.Data, &myUser)
+	params := ReqFetch{}
+	err := json.Unmarshal(m.Data, &params)
 
-	if err != nil {
-		log.Println(err)
+	log.Printf("%+v", params)
+
+	if !lib.LogOnError(err, "can't unpasrse json") {
 		return
 	}
 
-	myUser.Name = users[myUser.Id]
-
-	data, err := json.Marshal(&myUser)
-
-	if err != nil {
-		log.Println(err)
+	data, err := json.Marshal(&answer)
+	if !lib.LogOnError(err, "can't unpasrse json") {
 		return
 	}
 

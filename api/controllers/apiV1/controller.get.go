@@ -1,10 +1,10 @@
 package apiV1
 
 import (
-	"github.com/Atluss/Go-Nats-Api-Example/api/endpoints/v1api"
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
-	"github.com/Atluss/Go-Nats-Api-Example/lib/api"
-	"github.com/Atluss/Go-Nats-Api-Example/lib/config"
+	"github.com/Atluss/FetchTaskServer/api/endpoints/v1api"
+	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/lib/api"
+	"github.com/Atluss/FetchTaskServer/lib/config"
 	"log"
 )
 

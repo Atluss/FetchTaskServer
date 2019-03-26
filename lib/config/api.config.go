@@ -3,7 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
+	"github.com/Atluss/FetchTaskServer/lib"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -43,9 +43,9 @@ type natsCnfAddress struct {
 
 // config main
 type config struct {
-	Name     string     `json:"Name"`     // API name
-	Version  string     `json:"Version"`  // API version
-	Port 	 string		`json:"Port"`
+	Name     string     `json:"Name"`    // API name
+	Version  string     `json:"Version"` // API version
+	Port     string     `json:"Port"`
 	FilePath string     `json:"FilePath"` // path to Json settings file
 	Nats     natsConfig `json:"Nats"`
 }

@@ -7,7 +7,7 @@ FetchTaskServer
 
 Запуск докера
 -----------------------------------
-How to install: 
+Как установить и запустить: 
  1. [Установка Docker-CE (ubuntu)](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
  2. [Установка Docker compose](https://docs.docker.com/compose/install/)
  3. Распоковать docker/docker.zip в папку(это контейнер содержит: Nats 1.4.1, Postgres 11.2)

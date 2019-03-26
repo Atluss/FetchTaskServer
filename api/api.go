@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/Atluss/Go-Nats-Api-Example/api/controllers/apiV1"
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
-	"github.com/Atluss/Go-Nats-Api-Example/lib/config"
+	"github.com/Atluss/FetchTaskServer/api/controllers/apiV1"
+	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/lib/config"
 	"log"
 	"net/http"
 	"os"
