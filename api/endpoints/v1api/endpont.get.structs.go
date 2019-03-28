@@ -13,10 +13,10 @@ type ReqFetch struct {
 	Url    string `json:"Url"`    // URL
 }
 
-// Decode request
+// Decode FetchTask
 func (t *ReqFetch) Decode(r *http.Request) error {
 	err := json.NewDecoder(r.Body).Decode(&t)
-	if !lib.LogOnError(err, "error: can't decode request ReqFetch") {
+	if !lib.LogOnError(err, "error: can't decode FetchTask ReqFetch") {
 		return err
 	}
 	return nil
@@ -27,29 +27,9 @@ func (t *ReqFetch) Validate() error {
 		return fmt.Errorf("url missed")
 	}
 
-	if t.Method == "" {
+	if t.Method != http.MethodGet && t.Method != http.MethodPost {
 		return fmt.Errorf("method missed")
 	}
 
-	return nil
-}
-
-type ReplayBodyFetch struct {
-	ID         int    `json:"ID"`
-	StatusHttp int    `json:"StatusHttp"`
-	Headers    string `json:"Headers"`
-	Length     int    `json:"Length"` // answer Length
-}
-
-type ReplayFetch struct {
-	Ok   int             `json:"Ok"`
-	Body ReplayBodyFetch `json:"Body"`
-}
-
-func (t *ReplayFetch) Encode(w http.ResponseWriter) error {
-	err := json.NewEncoder(w).Encode(&t)
-	if !lib.LogOnError(err, "error: can't encode reply ReplayFetch") {
-		return err
-	}
 	return nil
 }

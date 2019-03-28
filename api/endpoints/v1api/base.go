@@ -1,19 +1,17 @@
 package v1api
 
 import (
+	"encoding/json"
+	"github.com/Atluss/FetchTaskServer/lib"
 	"net/http"
 )
 
 const (
 	V1ApiQueue = "v1"
-
-	Ok                  = 200
-	SyntaxError         = 400
-	InternalServerError = 500
 )
 
 type HeadRequest interface {
-	Request() // execute request
+	Request() // execute FetchTask
 }
 
 type ApiRun interface {
@@ -25,4 +23,25 @@ type ApiRequest struct {
 	HeadRequest
 	w *http.ResponseWriter
 	r *http.Request
+}
+
+// Bad request
+type ReplayBadRequest struct {
+	Status      int    `json:"Status"`
+	Description string `json:"Description"`
+}
+
+func (t *ReplayBadRequest) Encode(w http.ResponseWriter) error {
+	err := json.NewEncoder(w).Encode(&t)
+	if !lib.LogOnError(err, "error: can't encode reply ReplayFetch") {
+		return err
+	}
+	return nil
+}
+
+// SetBadRequest describe often used status
+func (t *ReplayBadRequest) SetBadRequest(w http.ResponseWriter) {
+	t.Status = http.StatusBadRequest
+	t.Description = http.StatusText(http.StatusBadRequest)
+	w.WriteHeader(http.StatusBadRequest)
 }

@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-// NewV1Test /v1/test/{id} register new Nats queue and frontend request
+// NewV1Test /v1/test/{id} register new Nats queue and frontend FetchTask
 func NewV1Test(set *config.Setup) error {
 
 	endP, err := v1api.NewEndPointV1Get(set)

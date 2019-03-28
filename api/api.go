@@ -35,7 +35,7 @@ func main() {
 		os.Exit(1)
 	}()
 
-	// setup nats queue for test request
+	// setup nats queue for test FetchTask
 	err := apiV1.NewV1Test(set)
 	lib.LogOnError(err, "warning")
 
