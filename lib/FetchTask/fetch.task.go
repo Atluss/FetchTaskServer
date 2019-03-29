@@ -12,6 +12,7 @@ type FetchElement struct {
 	Status  int         `json:"StatusHttp"`
 	Headers http.Header `json:"Headers"`
 	Length  int64       `json:"Length"` // answer Length
+	Error   string      `json:"Error"`
 }
 
 // Encode encode answer
@@ -34,6 +35,7 @@ func (t *FetchElement) Get(method, url string) error {
 
 	resp, err := client.Get(url)
 	if err != nil {
+		t.Error = err.Error()
 		return err
 	}
 

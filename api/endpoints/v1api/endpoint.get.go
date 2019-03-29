@@ -93,14 +93,17 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.reply)
-
 				log.Printf("%+v", req.reply)
 
 				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
+				} else {
+					if req.reply.Error != "" {
+						req.badRequest.SetNotFound(w, req.reply.Error)
+						fErr = true
+					}
 				}
-
 			}
 		}
 

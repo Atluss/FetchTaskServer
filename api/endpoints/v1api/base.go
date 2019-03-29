@@ -45,3 +45,9 @@ func (t *ReplayBadRequest) SetBadRequest(w http.ResponseWriter) {
 	t.Description = http.StatusText(http.StatusBadRequest)
 	w.WriteHeader(http.StatusBadRequest)
 }
+
+func (t *ReplayBadRequest) SetNotFound(w http.ResponseWriter, desc string) {
+	t.Status = http.StatusNotFound
+	t.Description = desc
+	w.WriteHeader(http.StatusNotFound)
+}
