@@ -114,6 +114,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 		} else {
 			log.Printf("Answer: %+v: for FetchTask: %+v", req.replyMq, req.request)
 			req.replyClient.SetFromElement(req.replyMq)
+			w.WriteHeader(http.StatusOK)
 			lib.LogOnError(req.replyClient.Encode(w), "warning")
 		}
 
@@ -145,8 +146,6 @@ func (obj *v1fetch) NatsQueue(m *nats.Msg) {
 	if !lib.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
-
-	log.Println("Replying to ", m.Reply)
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
 	lib.LogOnError(err, "warning")

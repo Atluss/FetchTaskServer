@@ -39,8 +39,8 @@ type v1list struct {
 }
 
 type v1listParams struct {
-	page    uint // page
-	perPage uint // elements per page
+	page    string // page
+	perPage string // elements per page
 }
 
 type v1listAnswer struct {
@@ -51,8 +51,6 @@ type v1listAnswer struct {
 
 // Request setup mux answer
 func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
-
-	//vars := mux.Vars(r)
 
 	fErr := false
 
@@ -68,13 +66,6 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 	wg.Add(1)
 
 	go func() {
-
-		/*data, err := json.Marshal(&req.replyMq)
-		if err != nil || len(req.replyMq.ID) == 0 {
-			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
-			req.badRequest.SetBadRequest(w)
-			fErr = true
-		}*/
 
 		var data []byte
 
@@ -100,19 +91,16 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 		if fErr {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
-
 			for _, v := range *req.replyMq {
-
 				req.replyClient = append(req.replyClient, FetchTask.PublicElement{
 					ID:      v.ID,
 					Status:  v.Status,
 					Headers: v.Headers,
 					Length:  v.Length})
-
 			}
 
 			log.Printf("Answer: %+v:", req.replyClient)
-
+			w.WriteHeader(http.StatusOK)
 			lib.LogOnError(json.NewEncoder(w).Encode(req.replyClient), "error: can't decode answer for list")
 		}
 
@@ -124,16 +112,11 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 
 // NatsQueue add new queue
 func (obj *v1list) NatsQueue(m *nats.Msg) {
-
 	answer := FetchTask.GetListElement()
-
 	data, err := json.Marshal(&answer)
 	if !lib.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
-
-	log.Println("Replying to ", m.Reply)
-
 	err = obj.Setup.Nats.Publish(m.Reply, data)
 	lib.LogOnError(err, "warning")
 }

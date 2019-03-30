@@ -15,16 +15,16 @@ import (
 	"time"
 )
 
-// NewEndPointV1Test constructor for /v1/test/{id}
-func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
+// NewEndPointV1Delete constructor for /v1/delete/{id}
+func NewEndPointV1Delete(set *config.Setup) (*v1delete, error) {
 
-	url := fmt.Sprintf("/%s/get/{id}", V1ApiQueue)
+	url := fmt.Sprintf("/%s/delete/{id}", V1ApiQueue)
 
 	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
 		return nil, err
 	}
 
-	endP := v1get{
+	endP := v1delete{
 		Setup: set,
 		Url:   url,
 	}
@@ -33,26 +33,26 @@ func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 
 }
 
-type v1get struct {
+type v1delete struct {
 	ApiRequest
 	Setup *config.Setup
 	Url   string
 }
 
-type v1getAnswer struct {
+type v1deleteAnswer struct {
 	replyMq     *FetchTask.FetchElement
 	replyClient *FetchTask.PublicElement
 	badRequest  *ReplayBadRequest
 }
 
 // Request setup mux answer
-func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
+func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 
 	fErr := false
 
-	req := &v1getAnswer{
+	req := &v1deleteAnswer{
 		replyMq:     &FetchTask.FetchElement{ID: vars["id"]},
 		replyClient: &FetchTask.PublicElement{},
 		badRequest:  &ReplayBadRequest{},
@@ -94,9 +94,11 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
 			log.Printf("Answer: %+v: for ID: %s", req.replyMq, req.replyMq.ID)
-			req.replyClient.SetFromElement(req.replyMq)
+			req.badRequest.Status = http.StatusOK
+			req.badRequest.Description = fmt.Sprintf("element id: %s deleted", req.replyMq.ID)
+
 			w.WriteHeader(http.StatusOK)
-			lib.LogOnError(req.replyClient.Encode(w), "warning")
+			lib.LogOnError(json.NewEncoder(w).Encode(req.badRequest), "error: can't decode answer for list")
 		}
 
 		wg.Done()
@@ -106,7 +108,7 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 }
 
 // NatsQueue add new queue
-func (obj *v1get) NatsQueue(m *nats.Msg) {
+func (obj *v1delete) NatsQueue(m *nats.Msg) {
 
 	answer := FetchTask.FetchElement{}
 
@@ -116,14 +118,17 @@ func (obj *v1get) NatsQueue(m *nats.Msg) {
 		return
 	}
 
-	answer, err = FetchTask.GetElementById(answer.ID)
+	err = FetchTask.DeleteFromList(answer.ID)
 	if !lib.LogOnError(err, "warning") {
 		answer.Error = err.Error()
 	}
+
 	data, err := json.Marshal(&answer)
 	if !lib.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
+
+	log.Println("Replying to ", m.Reply)
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
 	lib.LogOnError(err, "warning")

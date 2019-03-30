@@ -74,18 +74,51 @@ func GetListElement() []FetchElement {
 	return ret
 }
 
+// DeleteFromList delete element from list
+func DeleteFromList(id string) error {
+
+	mutex := sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if _, ok := FetchElements[id]; !ok {
+		return fmt.Errorf("no element id: %s", id)
+	}
+
+	delete(FetchElements, id)
+
+	return nil
+}
+
 // pages start at 1, can't be 0 or less.
-//func GetDataPage(page, perPage int) map[string]interface{} {
-//	start := (page - 1) * perPage
-//	stop := start + perPage
-//
-//	if start > len(FetchElements) {
-//		return nil
-//	}
-//
-//	if stop > len(FetchElements) {
-//		stop = len(FetchElements)
-//	}
-//
-//	return FetchElements[start:stop]
-//}
+func GetDataPage(page, perPage int) interface{} {
+	start := (page - 1) * perPage
+	stop := start + perPage
+
+	length := len(FetchElements)
+
+	if start > length {
+		return nil
+	}
+
+	if stop > length {
+		stop = length
+	}
+
+	ret := []FetchElement{}
+
+	i := 1
+
+	for _, v := range FetchElements {
+
+		if i >= start && i < stop {
+			ret = append(ret, v)
+		}
+
+		if i > stop {
+			break
+		}
+	}
+
+	return ret
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Atluss/FetchTaskServer/api/controllers/apiV1"
 	"github.com/Atluss/FetchTaskServer/lib"
 	"github.com/Atluss/FetchTaskServer/lib/config"
@@ -45,6 +46,9 @@ func main() {
 	err = apiV1.NewV1List(set)
 	lib.LogOnError(err, "warning")
 
-	log.Fatal(http.ListenAndServe(":10000", set.Route))
+	err = apiV1.NewV1Delete(set)
+	lib.LogOnError(err, "warning")
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", set.Config.Port), set.Route))
 
 }
