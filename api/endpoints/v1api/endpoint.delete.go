@@ -58,6 +58,8 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 		badRequest:  &ReplayBadRequest{},
 	}
 
+	log.Printf("Request to delete element ID: %s", req.replyMq.ID)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	wg := sync.WaitGroup{}
@@ -76,8 +78,6 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				log.Printf("%+v", req.replyMq)
-
 				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
@@ -93,7 +93,7 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 		if fErr {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
-			log.Printf("Answer: %+v: for ID: %s", req.replyMq, req.replyMq.ID)
+			log.Printf("Request to detelte ID: %s done", req.replyMq.ID)
 			req.badRequest.Status = http.StatusOK
 			req.badRequest.Description = fmt.Sprintf("element id: %s deleted", req.replyMq.ID)
 
@@ -113,7 +113,6 @@ func (obj *v1delete) NatsQueue(m *nats.Msg) {
 	answer := FetchTask.FetchElement{}
 
 	err := json.Unmarshal(m.Data, &answer)
-	log.Printf("%+v", answer)
 	if !lib.LogOnError(err, "can't Unmarshal params json") {
 		return
 	}
@@ -127,8 +126,6 @@ func (obj *v1delete) NatsQueue(m *nats.Msg) {
 	if !lib.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
-
-	log.Println("Replying to ", m.Reply)
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
 	lib.LogOnError(err, "warning")

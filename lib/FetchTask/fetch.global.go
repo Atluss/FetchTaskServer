@@ -89,36 +89,3 @@ func DeleteFromList(id string) error {
 
 	return nil
 }
-
-// pages start at 1, can't be 0 or less.
-func GetDataPage(page, perPage int) interface{} {
-	start := (page - 1) * perPage
-	stop := start + perPage
-
-	length := len(FetchElements)
-
-	if start > length {
-		return nil
-	}
-
-	if stop > length {
-		stop = length
-	}
-
-	ret := []FetchElement{}
-
-	i := 1
-
-	for _, v := range FetchElements {
-
-		if i >= start && i < stop {
-			ret = append(ret, v)
-		}
-
-		if i > stop {
-			break
-		}
-	}
-
-	return ret
-}

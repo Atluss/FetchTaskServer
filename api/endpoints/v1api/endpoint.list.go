@@ -38,11 +38,6 @@ type v1list struct {
 	Url   string
 }
 
-type v1listParams struct {
-	page    string // page
-	perPage string // elements per page
-}
-
 type v1listAnswer struct {
 	replyMq     *[]FetchTask.FetchElement
 	replyClient []FetchTask.PublicElement
@@ -60,6 +55,8 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 		badRequest:  &ReplayBadRequest{},
 	}
 
+	log.Printf("Request: %s", obj.Url)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	wg := sync.WaitGroup{}
@@ -74,8 +71,6 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				log.Printf("%+v", req.replyMq)
-
 				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
@@ -99,19 +94,19 @@ func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 					Length:  v.Length})
 			}
 
-			log.Printf("Answer: %+v:", req.replyClient)
+			log.Printf("Request list done elements: %d", len(req.replyClient))
 			w.WriteHeader(http.StatusOK)
 			lib.LogOnError(json.NewEncoder(w).Encode(req.replyClient), "error: can't decode answer for list")
 		}
 
 		wg.Done()
 	}()
-
 	wg.Wait()
 }
 
 // NatsQueue add new queue
 func (obj *v1list) NatsQueue(m *nats.Msg) {
+
 	answer := FetchTask.GetListElement()
 	data, err := json.Marshal(&answer)
 	if !lib.LogOnError(err, "can't Unmarshal json") {
@@ -119,4 +114,5 @@ func (obj *v1list) NatsQueue(m *nats.Msg) {
 	}
 	err = obj.Setup.Nats.Publish(m.Reply, data)
 	lib.LogOnError(err, "warning")
+
 }

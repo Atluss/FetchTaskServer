@@ -58,6 +58,8 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 		badRequest:  &ReplayBadRequest{},
 	}
 
+	log.Printf("Request: %s, id: %s", obj.Url, req.replyMq.ID)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	wg := sync.WaitGroup{}
@@ -76,8 +78,6 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				log.Printf("%+v", req.replyMq)
-
 				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
@@ -93,7 +93,7 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 		if fErr {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
-			log.Printf("Answer: %+v: for ID: %s", req.replyMq, req.replyMq.ID)
+			log.Printf("Request: %s done for ID: %s", obj.Url, req.replyMq.ID)
 			req.replyClient.SetFromElement(req.replyMq)
 			w.WriteHeader(http.StatusOK)
 			lib.LogOnError(req.replyClient.Encode(w), "warning")
@@ -111,7 +111,6 @@ func (obj *v1get) NatsQueue(m *nats.Msg) {
 	answer := FetchTask.FetchElement{}
 
 	err := json.Unmarshal(m.Data, &answer)
-	log.Printf("%+v", answer)
 	if !lib.LogOnError(err, "can't Unmarshal params json") {
 		return
 	}

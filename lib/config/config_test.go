@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/Atluss/Go-Nats-Api-Example/lib"
+	"github.com/Atluss/FetchTaskServer/lib"
 	"log"
 	"testing"
 )
@@ -22,7 +22,6 @@ func TestConfig(t *testing.T) {
 	log.Printf("Nats port: %s", cnf.Nats.Address[0].Port)
 	log.Printf("Nats address: %s", cnf.Nats.Address[0].Address)
 	log.Printf("Nats address: %s", cnf.GetNatsAddresses())
-
 }
 
 func TestSetup(t *testing.T) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Atluss/FetchTaskServer/lib"
 	"net/http"
+	"net/url"
 )
 
 // ReqFetch get url
@@ -25,6 +26,11 @@ func (t *ReqFetch) Decode(r *http.Request) error {
 func (t *ReqFetch) Validate() error {
 	if t.Url == "" {
 		return fmt.Errorf("url missed")
+	}
+
+	_, err := url.ParseRequestURI(t.Url)
+	if err != nil {
+		return fmt.Errorf("url not correct")
 	}
 
 	if t.Method != http.MethodGet && t.Method != http.MethodPost {

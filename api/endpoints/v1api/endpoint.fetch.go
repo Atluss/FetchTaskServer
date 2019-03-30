@@ -60,22 +60,20 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 
 	// decode FetchTask body
 	if err := req.request.Decode(r); err != nil {
-		fErr = true
-	}
-
-	// validate if decode is ok
-	if !fErr {
-		if err := req.request.Validate(); err != nil {
-			fErr = true
-			log.Printf("error: validate '%s' FetchTask %+v", err, req.request)
-		}
-	}
-
-	if fErr {
-
 		req.badRequest.SetBadRequest(w)
 		lib.LogOnError(req.badRequest.Encode(w), "warning")
+		return
+	}
 
+	log.Printf("Request: %s, params: %+v", obj.Url, req.request)
+
+	// validate if decode is ok
+	if err := req.request.Validate(); err != nil {
+		fErr = true
+		log.Printf("error: validate '%s' FetchTask %+v", err, req.request)
+		req.badRequest.SetBadRequest(w)
+		req.badRequest.Description = err.Error()
+		lib.LogOnError(req.badRequest.Encode(w), "warning")
 		return
 	}
 
@@ -95,8 +93,6 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				log.Printf("%+v", req.replyMq)
-
 				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
@@ -112,17 +108,15 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 		if fErr {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
-			log.Printf("Answer: %+v: for FetchTask: %+v", req.replyMq, req.request)
+			log.Printf("Request: %s done, id: %s", obj.Url, req.replyMq.ID)
 			req.replyClient.SetFromElement(req.replyMq)
 			w.WriteHeader(http.StatusOK)
 			lib.LogOnError(req.replyClient.Encode(w), "warning")
 		}
 
 		wg.Done()
-
 	}()
 	wg.Wait()
-
 }
 
 // NatsQueue add new queue
@@ -132,8 +126,6 @@ func (obj *v1fetch) NatsQueue(m *nats.Msg) {
 
 	params := ReqFetch{}
 	err := json.Unmarshal(m.Data, &params)
-
-	log.Printf("%+v", params)
 	if !lib.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
