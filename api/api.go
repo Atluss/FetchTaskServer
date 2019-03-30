@@ -36,7 +36,13 @@ func main() {
 	}()
 
 	// setup nats queue for test FetchTask
-	err := apiV1.NewV1Test(set)
+	err := apiV1.NewV1Fetch(set)
+	lib.LogOnError(err, "warning")
+
+	err = apiV1.NewV1Get(set)
+	lib.LogOnError(err, "warning")
+
+	err = apiV1.NewV1List(set)
 	lib.LogOnError(err, "warning")
 
 	log.Fatal(http.ListenAndServe(":10000", set.Route))

@@ -7,7 +7,6 @@ import (
 	"github.com/Atluss/FetchTaskServer/lib/FetchTask"
 	"github.com/Atluss/FetchTaskServer/lib/api"
 	"github.com/Atluss/FetchTaskServer/lib/config"
-	"github.com/gorilla/mux"
 	"github.com/nats-io/go-nats"
 	"log"
 	"net/http"
@@ -16,15 +15,15 @@ import (
 )
 
 // NewEndPointV1Test constructor for /v1/test/{id}
-func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
+func NewEndPointV1List(set *config.Setup) (*v1list, error) {
 
-	url := fmt.Sprintf("/%s/get/{id}", V1ApiQueue)
+	url := fmt.Sprintf("/%s/list", V1ApiQueue)
 
 	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
 		return nil, err
 	}
 
-	endP := v1get{
+	endP := v1list{
 		Setup: set,
 		Url:   url,
 	}
@@ -33,28 +32,33 @@ func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 
 }
 
-type v1get struct {
+type v1list struct {
 	ApiRequest
 	Setup *config.Setup
 	Url   string
 }
 
-type v1getAnswer struct {
-	replyMq     *FetchTask.FetchElement
-	replyClient *FetchTask.PublicElement
+type v1listParams struct {
+	page    uint // page
+	perPage uint // elements per page
+}
+
+type v1listAnswer struct {
+	replyMq     *[]FetchTask.FetchElement
+	replyClient []FetchTask.PublicElement
 	badRequest  *ReplayBadRequest
 }
 
 // Request setup mux answer
-func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
+func (obj *v1list) Request(w http.ResponseWriter, r *http.Request) {
 
-	vars := mux.Vars(r)
+	//vars := mux.Vars(r)
 
 	fErr := false
 
-	req := &v1getAnswer{
-		replyMq:     &FetchTask.FetchElement{ID: vars["id"]},
-		replyClient: &FetchTask.PublicElement{},
+	req := &v1listAnswer{
+		replyMq:     &[]FetchTask.FetchElement{},
+		replyClient: []FetchTask.PublicElement{},
 		badRequest:  &ReplayBadRequest{},
 	}
 
@@ -62,14 +66,17 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
+
 	go func() {
 
-		data, err := json.Marshal(&req.replyMq)
+		/*data, err := json.Marshal(&req.replyMq)
 		if err != nil || len(req.replyMq.ID) == 0 {
 			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
 			req.badRequest.SetBadRequest(w)
 			fErr = true
-		}
+		}*/
+
+		var data []byte
 
 		if !fErr {
 			msg, err := obj.Setup.Nats.Request(obj.Url, data, 30*time.Second)
@@ -82,8 +89,8 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
 				} else {
-					if req.replyMq.Error != "" {
-						req.badRequest.SetNotFound(w, req.replyMq.Error)
+					if len(*req.replyMq) == 0 {
+						req.badRequest.SetNotFound(w, "no elements")
 						fErr = true
 					}
 				}
@@ -93,9 +100,20 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 		if fErr {
 			lib.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
-			log.Printf("Answer: %+v: for ID: %s", req.replyMq, req.replyMq.ID)
-			req.replyClient.SetFromElement(req.replyMq)
-			lib.LogOnError(req.replyClient.Encode(w), "warning")
+
+			for _, v := range *req.replyMq {
+
+				req.replyClient = append(req.replyClient, FetchTask.PublicElement{
+					ID:      v.ID,
+					Status:  v.Status,
+					Headers: v.Headers,
+					Length:  v.Length})
+
+			}
+
+			log.Printf("Answer: %+v:", req.replyClient)
+
+			lib.LogOnError(json.NewEncoder(w).Encode(req.replyClient), "error: can't decode answer for list")
 		}
 
 		wg.Done()
@@ -105,20 +123,9 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 }
 
 // NatsQueue add new queue
-func (obj *v1get) NatsQueue(m *nats.Msg) {
+func (obj *v1list) NatsQueue(m *nats.Msg) {
 
-	answer := FetchTask.FetchElement{}
-
-	err := json.Unmarshal(m.Data, &answer)
-	log.Printf("%+v", answer)
-	if !lib.LogOnError(err, "can't Unmarshal params json") {
-		return
-	}
-
-	answer, err = FetchTask.GetElementById(answer.ID)
-	if !lib.LogOnError(err, "warning") {
-		answer.Error = err.Error()
-	}
+	answer := FetchTask.GetListElement()
 
 	data, err := json.Marshal(&answer)
 	if !lib.LogOnError(err, "can't Unmarshal json") {

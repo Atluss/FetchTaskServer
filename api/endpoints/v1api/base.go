@@ -11,7 +11,8 @@ const (
 )
 
 type HeadRequest interface {
-	Request() // execute FetchTask
+	Request()   // execute FetchTask
+	NatsQueue() // nats func
 }
 
 type ApiRun interface {
@@ -33,7 +34,7 @@ type ReplayBadRequest struct {
 
 func (t *ReplayBadRequest) Encode(w http.ResponseWriter) error {
 	err := json.NewEncoder(w).Encode(&t)
-	if !lib.LogOnError(err, "error: can't encode reply ReplayFetch") {
+	if !lib.LogOnError(err, "error: can't encode replyMq ReplayFetch") {
 		return err
 	}
 	return nil

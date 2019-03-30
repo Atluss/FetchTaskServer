@@ -8,9 +8,10 @@ import (
 	"log"
 )
 
-func NewV1Get(set *config.Setup) error {
+// NewV1Fetch /v1/test/{id} register new Nats queue and frontend FetchTask
+func NewV1Fetch(set *config.Setup) error {
 
-	endP, err := v1api.NewEndPointV1Get(set)
+	endP, err := v1api.NewEndPointV1Fetch(set)
 	if err != nil {
 		return err
 	}

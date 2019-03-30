@@ -42,20 +42,50 @@ func AddToElements(obj *FetchElement) string {
 }
 
 // GetElementById get element by id
-func GetElementById(id string) (*FetchElement, error) {
+func GetElementById(id string) (FetchElement, error) {
 
 	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
+	el := FetchElement{}
+	var ok bool
+
 	if FetchElements == nil {
-		return nil, fmt.Errorf("no element id: %s", id)
+		return el, fmt.Errorf("no element id: %s", id)
 	}
 
-	if el, ok := FetchElements[id]; !ok {
-		return nil, fmt.Errorf("no element id: %s", id)
+	if el, ok = FetchElements[id]; !ok {
+		return el, fmt.Errorf("no element id: %s", id)
 	} else {
-		return &el, nil
+		return el, nil
 	}
 
 }
+
+func GetListElement() []FetchElement {
+
+	ret := []FetchElement{}
+
+	for _, v := range FetchElements {
+		ret = append(ret, v)
+	}
+
+	return ret
+}
+
+// pages start at 1, can't be 0 or less.
+//func GetDataPage(page, perPage int) map[string]interface{} {
+//	start := (page - 1) * perPage
+//	stop := start + perPage
+//
+//	if start > len(FetchElements) {
+//		return nil
+//	}
+//
+//	if stop > len(FetchElements) {
+//		stop = len(FetchElements)
+//	}
+//
+//	return FetchElements[start:stop]
+//}

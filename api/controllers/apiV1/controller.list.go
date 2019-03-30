@@ -8,9 +8,10 @@ import (
 	"log"
 )
 
-func NewV1Get(set *config.Setup) error {
+// NewV1List /v1/list
+func NewV1List(set *config.Setup) error {
 
-	endP, err := v1api.NewEndPointV1Get(set)
+	endP, err := v1api.NewEndPointV1List(set)
 	if err != nil {
 		return err
 	}

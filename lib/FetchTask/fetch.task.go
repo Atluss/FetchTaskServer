@@ -15,8 +15,22 @@ type FetchElement struct {
 	Error   string      `json:"Error"`
 }
 
+type PublicElement struct {
+	ID      string      `json:"ID"`
+	Status  int         `json:"StatusHttp"`
+	Headers http.Header `json:"Headers"`
+	Length  int64       `json:"Length"` // answer Length
+}
+
+func (obj *PublicElement) SetFromElement(cl *FetchElement) {
+	obj.ID = cl.ID
+	obj.Status = cl.Status
+	obj.Headers = cl.Headers
+	obj.Length = cl.Length
+}
+
 // Encode encode answer
-func (t *FetchElement) Encode(w http.ResponseWriter) error {
+func (t *PublicElement) Encode(w http.ResponseWriter) error {
 	err := json.NewEncoder(w).Encode(&t)
 	if !lib.LogOnError(err, "error: can't encode reply ReplayFetch") {
 		return err
@@ -24,7 +38,8 @@ func (t *FetchElement) Encode(w http.ResponseWriter) error {
 	return nil
 }
 
-func (t *FetchElement) Get(method, url string) error {
+// GetOnline request to url, and sets params
+func (t *FetchElement) GetOnline(method, url string) error {
 
 	tr := &http.Transport{
 		MaxIdleConns:       10,
