@@ -8,6 +8,7 @@ import (
 
 // global map of requests
 var FetchElements map[string]FetchElement
+var mutex sync.Mutex
 
 // IsInElements check element in array
 func IsInElements(token string) bool {
@@ -26,7 +27,6 @@ func IsInElements(token string) bool {
 // AddToElements on global elements array
 func AddToElements(obj *FetchElement) string {
 
-	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -39,12 +39,12 @@ func AddToElements(obj *FetchElement) string {
 			return id
 		}
 	}
+
 }
 
 // GetElementById get element by id
 func GetElementById(id string) (FetchElement, error) {
 
-	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -77,7 +77,6 @@ func GetListElement() []FetchElement {
 // DeleteFromList delete element from list
 func DeleteFromList(id string) error {
 
-	mutex := sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 
