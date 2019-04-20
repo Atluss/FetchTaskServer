@@ -1,4 +1,4 @@
-##FetchTaskServer
+## FetchTaskServer
 
 В проекте используется [Nats](https://www.nats.io/) для создания API. И mux для frontend API
 Для загрузки зависимостей используется [Go modules](https://github.com/golang/go/wiki/Modules)
