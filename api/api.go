@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	settingPath := "settings.json"
+	settingPath := "api/settings.json"
 
 	set := config.NewApiSetup(settingPath)
 

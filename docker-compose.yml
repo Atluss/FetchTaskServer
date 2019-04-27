@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+
+  nats:
+    container_name: cn_nats_ft
+    image: nats:1.4.1
+    ports:
+      - 8222:8222
+    expose:
+      - 4222
+    hostname: nats-server
+
+  app:
+    container_name: cn_go_ft_client
+    image: golang:1.12.2
+    volumes:
+      - .:/go/src/FetchTaskServer
+    working_dir: /go/src/FetchTaskServer
+    command: go run api/api.go
+    environment:
+      - GO111MODULE=on
+    depends_on:
+      - nats
+    ports:
+      - "10000:10000"
+    links:
+      - nats

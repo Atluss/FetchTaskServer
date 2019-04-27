@@ -67,7 +67,7 @@
 Как установить и запустить Docker: 
  1. [Установка Docker-CE (ubuntu)](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
  2. [Установка Docker compose](https://docs.docker.com/compose/install/)
- 3. В папке `./docker` запустить: `sudo docker-compose up`
+ 3. `sudo docker-compose up` - запустится на 10000 порту
  
 ## Файл настроек
 
