@@ -1,12 +1,12 @@
-package v1api
+package endpoints
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/lib"
-	"github.com/Atluss/FetchTaskServer/lib/FetchTask"
-	"github.com/Atluss/FetchTaskServer/lib/api"
-	"github.com/Atluss/FetchTaskServer/lib/config"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/FetchTask"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/api"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/config"
 	"github.com/gorilla/mux"
 	"github.com/nats-io/go-nats"
 	"log"
@@ -18,9 +18,9 @@ import (
 // NewEndPointV1Test constructor for /v1/test/{id}
 func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 
-	url := fmt.Sprintf("/%s/get/{id}", V1ApiQueue)
+	url := fmt.Sprintf("/%s/get/{id}", api.V1ApiQueue)
 
-	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
+	if err := api.CheckEndPoint(api.V1ApiQueue, url); err != nil {
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func NewEndPointV1Get(set *config.Setup) (*v1get, error) {
 }
 
 type v1get struct {
-	ApiRequest
+	api.ApiRequest
 	Setup *config.Setup
 	Url   string
 }
@@ -42,7 +42,7 @@ type v1get struct {
 type v1getAnswer struct {
 	replyMq     *FetchTask.FetchElement
 	replyClient *FetchTask.PublicElement
-	badRequest  *ReplayBadRequest
+	badRequest  *api.ReplayBadRequest
 }
 
 // Request setup mux answer
@@ -55,7 +55,7 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 	req := &v1getAnswer{
 		replyMq:     &FetchTask.FetchElement{ID: vars["id"]},
 		replyClient: &FetchTask.PublicElement{},
-		badRequest:  &ReplayBadRequest{},
+		badRequest:  &api.ReplayBadRequest{},
 	}
 
 	log.Printf("Request: %s, id: %s", obj.Url, req.replyMq.ID)
@@ -68,7 +68,7 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
 		data, err := json.Marshal(&req.replyMq)
 		if err != nil || len(req.replyMq.ID) == 0 {
-			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
+			v1.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
 			req.badRequest.SetBadRequest(w)
 			fErr = true
 		}
@@ -78,7 +78,7 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
+				if !v1.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
 				} else {
@@ -91,12 +91,12 @@ func (obj *v1get) Request(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if fErr {
-			lib.LogOnError(req.badRequest.Encode(w), "warning")
+			v1.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
 			log.Printf("Request: %s done for ID: %s", obj.Url, req.replyMq.ID)
 			req.replyClient.SetFromElement(req.replyMq)
 			w.WriteHeader(http.StatusOK)
-			lib.LogOnError(req.replyClient.Encode(w), "warning")
+			v1.LogOnError(req.replyClient.Encode(w), "warning")
 		}
 
 		wg.Done()
@@ -111,19 +111,19 @@ func (obj *v1get) NatsQueue(m *nats.Msg) {
 	answer := FetchTask.FetchElement{}
 
 	err := json.Unmarshal(m.Data, &answer)
-	if !lib.LogOnError(err, "can't Unmarshal params json") {
+	if !v1.LogOnError(err, "can't Unmarshal params json") {
 		return
 	}
 
 	answer, err = FetchTask.GetElementById(answer.ID)
-	if !lib.LogOnError(err, "warning") {
+	if !v1.LogOnError(err, "warning") {
 		answer.Error = err.Error()
 	}
 	data, err := json.Marshal(&answer)
-	if !lib.LogOnError(err, "can't Unmarshal json") {
+	if !v1.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
-	lib.LogOnError(err, "warning")
+	v1.LogOnError(err, "warning")
 }

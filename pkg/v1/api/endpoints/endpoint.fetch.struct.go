@@ -1,9 +1,9 @@
-package v1api
+package endpoints
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
 	"net/http"
 	"net/url"
 )
@@ -17,12 +17,13 @@ type ReqFetch struct {
 // Decode FetchTask
 func (t *ReqFetch) Decode(r *http.Request) error {
 	err := json.NewDecoder(r.Body).Decode(&t)
-	if !lib.LogOnError(err, "error: can't decode FetchTask ReqFetch") {
+	if !v1.LogOnError(err, "error: can't decode FetchTask ReqFetch") {
 		return err
 	}
 	return nil
 }
 
+// Validate it
 func (t *ReqFetch) Validate() error {
 	if t.Url == "" {
 		return fmt.Errorf("url missed")

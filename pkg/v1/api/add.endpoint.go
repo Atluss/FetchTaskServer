@@ -24,6 +24,7 @@ func AddEndPoint(queue, url string) {
 	EndPoints[queue] = append(EndPoints[queue], endPoint{url: url})
 }
 
+// CheckEndPoint in registrated endpoints
 func CheckEndPoint(queue, url string) error {
 
 	if EndPoints == nil {

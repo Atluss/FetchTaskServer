@@ -1,12 +1,12 @@
-package v1api
+package endpoints
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/lib"
-	"github.com/Atluss/FetchTaskServer/lib/FetchTask"
-	"github.com/Atluss/FetchTaskServer/lib/api"
-	"github.com/Atluss/FetchTaskServer/lib/config"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/FetchTask"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/api"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/config"
 	"github.com/gorilla/mux"
 	"github.com/nats-io/go-nats"
 	"log"
@@ -18,9 +18,9 @@ import (
 // NewEndPointV1Delete constructor for /v1/delete/{id}
 func NewEndPointV1Delete(set *config.Setup) (*v1delete, error) {
 
-	url := fmt.Sprintf("/%s/delete/{id}", V1ApiQueue)
+	url := fmt.Sprintf("/%s/delete/{id}", api.V1ApiQueue)
 
-	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
+	if err := api.CheckEndPoint(api.V1ApiQueue, url); err != nil {
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func NewEndPointV1Delete(set *config.Setup) (*v1delete, error) {
 }
 
 type v1delete struct {
-	ApiRequest
+	api.ApiRequest
 	Setup *config.Setup
 	Url   string
 }
@@ -42,7 +42,7 @@ type v1delete struct {
 type v1deleteAnswer struct {
 	replyMq     *FetchTask.FetchElement
 	replyClient *FetchTask.PublicElement
-	badRequest  *ReplayBadRequest
+	badRequest  *api.ReplayBadRequest
 }
 
 // Request setup mux answer
@@ -55,7 +55,7 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 	req := &v1deleteAnswer{
 		replyMq:     &FetchTask.FetchElement{ID: vars["id"]},
 		replyClient: &FetchTask.PublicElement{},
-		badRequest:  &ReplayBadRequest{},
+		badRequest:  &api.ReplayBadRequest{},
 	}
 
 	log.Printf("Request to delete element ID: %s", req.replyMq.ID)
@@ -68,7 +68,7 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 
 		data, err := json.Marshal(&req.replyMq)
 		if err != nil || len(req.replyMq.ID) == 0 {
-			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
+			v1.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
 			req.badRequest.SetBadRequest(w)
 			fErr = true
 		}
@@ -78,7 +78,7 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
+				if !v1.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
 				} else {
@@ -91,14 +91,14 @@ func (obj *v1delete) Request(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if fErr {
-			lib.LogOnError(req.badRequest.Encode(w), "warning")
+			v1.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
 			log.Printf("Request to detelte ID: %s done", req.replyMq.ID)
 			req.badRequest.Status = http.StatusOK
 			req.badRequest.Description = fmt.Sprintf("element id: %s deleted", req.replyMq.ID)
 
 			w.WriteHeader(http.StatusOK)
-			lib.LogOnError(json.NewEncoder(w).Encode(req.badRequest), "error: can't decode answer for list")
+			v1.LogOnError(json.NewEncoder(w).Encode(req.badRequest), "error: can't decode answer for list")
 		}
 
 		wg.Done()
@@ -113,20 +113,20 @@ func (obj *v1delete) NatsQueue(m *nats.Msg) {
 	answer := FetchTask.FetchElement{}
 
 	err := json.Unmarshal(m.Data, &answer)
-	if !lib.LogOnError(err, "can't Unmarshal params json") {
+	if !v1.LogOnError(err, "can't Unmarshal params json") {
 		return
 	}
 
 	err = FetchTask.DeleteFromList(answer.ID)
-	if !lib.LogOnError(err, "warning") {
+	if !v1.LogOnError(err, "warning") {
 		answer.Error = err.Error()
 	}
 
 	data, err := json.Marshal(&answer)
-	if !lib.LogOnError(err, "can't Unmarshal json") {
+	if !v1.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
-	lib.LogOnError(err, "warning")
+	v1.LogOnError(err, "warning")
 }

@@ -2,11 +2,12 @@ package FetchTask
 
 import (
 	"encoding/json"
-	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
 	"net/http"
 	"time"
 )
 
+// FetchElement list item
 type FetchElement struct {
 	ID      string      `json:"ID"`
 	Status  int         `json:"StatusHttp"`
@@ -15,6 +16,7 @@ type FetchElement struct {
 	Error   string      `json:"Error"`
 }
 
+// PublicElement public answer after add
 type PublicElement struct {
 	ID      string      `json:"ID"`
 	Status  int         `json:"StatusHttp"`
@@ -22,6 +24,7 @@ type PublicElement struct {
 	Length  int64       `json:"Length"` // answer Length
 }
 
+// SetFromElement set answers values
 func (obj *PublicElement) SetFromElement(cl *FetchElement) {
 	obj.ID = cl.ID
 	obj.Status = cl.Status
@@ -32,7 +35,7 @@ func (obj *PublicElement) SetFromElement(cl *FetchElement) {
 // Encode encode answer
 func (t *PublicElement) Encode(w http.ResponseWriter) error {
 	err := json.NewEncoder(w).Encode(&t)
-	if !lib.LogOnError(err, "error: can't encode reply ReplayFetch") {
+	if !v1.LogOnError(err, "error: can't encode reply ReplayFetch") {
 		return err
 	}
 	return nil

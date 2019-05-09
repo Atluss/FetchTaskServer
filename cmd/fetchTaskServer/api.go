@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/api/controllers/apiV1"
-	"github.com/Atluss/FetchTaskServer/lib"
-	"github.com/Atluss/FetchTaskServer/lib/config"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/api/controllers"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/config"
 	"log"
 	"net/http"
 	"os"
@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	settingPath := "api/settings.json"
+	settingPath := "settings.json"
 
 	set := config.NewApiSetup(settingPath)
 
@@ -37,17 +37,17 @@ func main() {
 	}()
 
 	// setup nats queue for test FetchTask
-	err := apiV1.NewV1Fetch(set)
-	lib.LogOnError(err, "warning")
+	err := controllers.NewV1Fetch(set)
+	v1.LogOnError(err, "warning")
 
-	err = apiV1.NewV1Get(set)
-	lib.LogOnError(err, "warning")
+	err = controllers.NewV1Get(set)
+	v1.LogOnError(err, "warning")
 
-	err = apiV1.NewV1List(set)
-	lib.LogOnError(err, "warning")
+	err = controllers.NewV1List(set)
+	v1.LogOnError(err, "warning")
 
-	err = apiV1.NewV1Delete(set)
-	lib.LogOnError(err, "warning")
+	err = controllers.NewV1Delete(set)
+	v1.LogOnError(err, "warning")
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", set.Config.Port), set.Route))
 

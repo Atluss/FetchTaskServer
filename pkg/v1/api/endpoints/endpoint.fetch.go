@@ -1,12 +1,12 @@
-package v1api
+package endpoints
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/lib"
-	"github.com/Atluss/FetchTaskServer/lib/FetchTask"
-	"github.com/Atluss/FetchTaskServer/lib/api"
-	"github.com/Atluss/FetchTaskServer/lib/config"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/FetchTask"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/api"
+	"github.com/Atluss/FetchTaskServer/pkg/v1/config"
 	"github.com/nats-io/go-nats"
 	"log"
 	"net/http"
@@ -17,9 +17,8 @@ import (
 // NewEndPointV1Test constructor for /v1/test/{id}
 func NewEndPointV1Fetch(set *config.Setup) (*v1fetch, error) {
 
-	url := fmt.Sprintf("/%s/fetch", V1ApiQueue)
-
-	if err := api.CheckEndPoint(V1ApiQueue, url); err != nil {
+	url := fmt.Sprintf("/%s/fetch", api.V1ApiQueue)
+	if err := api.CheckEndPoint(api.V1ApiQueue, url); err != nil {
 		return nil, err
 	}
 
@@ -27,13 +26,11 @@ func NewEndPointV1Fetch(set *config.Setup) (*v1fetch, error) {
 		Setup: set,
 		Url:   url,
 	}
-
 	return &endP, nil
-
 }
 
 type v1fetch struct {
-	ApiRequest
+	api.ApiRequest
 	Setup *config.Setup
 	Url   string
 }
@@ -42,7 +39,7 @@ type v1fetchAnswer struct {
 	request     *ReqFetch
 	replyMq     *FetchTask.FetchElement
 	replyClient *FetchTask.PublicElement
-	badRequest  *ReplayBadRequest
+	badRequest  *api.ReplayBadRequest
 }
 
 // Request setup mux answer
@@ -53,7 +50,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 		request:     &ReqFetch{},
 		replyMq:     &FetchTask.FetchElement{},
 		replyClient: &FetchTask.PublicElement{},
-		badRequest:  &ReplayBadRequest{},
+		badRequest:  &api.ReplayBadRequest{},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -61,7 +58,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 	// decode FetchTask body
 	if err := req.request.Decode(r); err != nil {
 		req.badRequest.SetBadRequest(w)
-		lib.LogOnError(req.badRequest.Encode(w), "warning")
+		v1.LogOnError(req.badRequest.Encode(w), "warning")
 		return
 	}
 
@@ -73,7 +70,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error: validate '%s' FetchTask %+v", err, req.request)
 		req.badRequest.SetBadRequest(w)
 		req.badRequest.Description = err.Error()
-		lib.LogOnError(req.badRequest.Encode(w), "warning")
+		v1.LogOnError(req.badRequest.Encode(w), "warning")
 		return
 	}
 
@@ -83,7 +80,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 
 		data, err := json.Marshal(&req.request)
 		if err != nil {
-			lib.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
+			v1.LogOnError(err, fmt.Sprintf("warning: Problem with parsing FetchTask: %s", obj.Url))
 			req.badRequest.SetBadRequest(w)
 			fErr = true
 		}
@@ -93,7 +90,7 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 
 			if err == nil && msg != nil {
 				err := json.Unmarshal(msg.Data, req.replyMq)
-				if !lib.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
+				if !v1.LogOnError(err, fmt.Sprintf("error: can't parse answer FetchTask %s", obj.Url)) {
 					req.badRequest.SetBadRequest(w)
 					fErr = true
 				} else {
@@ -106,12 +103,12 @@ func (obj *v1fetch) Request(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if fErr {
-			lib.LogOnError(req.badRequest.Encode(w), "warning")
+			v1.LogOnError(req.badRequest.Encode(w), "warning")
 		} else {
 			log.Printf("Request: %s done, id: %s", obj.Url, req.replyMq.ID)
 			req.replyClient.SetFromElement(req.replyMq)
 			w.WriteHeader(http.StatusOK)
-			lib.LogOnError(req.replyClient.Encode(w), "warning")
+			v1.LogOnError(req.replyClient.Encode(w), "warning")
 		}
 
 		wg.Done()
@@ -126,7 +123,7 @@ func (obj *v1fetch) NatsQueue(m *nats.Msg) {
 
 	params := ReqFetch{}
 	err := json.Unmarshal(m.Data, &params)
-	if !lib.LogOnError(err, "can't Unmarshal json") {
+	if !v1.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
 
@@ -135,10 +132,10 @@ func (obj *v1fetch) NatsQueue(m *nats.Msg) {
 	}
 
 	data, err := json.Marshal(&answer)
-	if !lib.LogOnError(err, "can't Unmarshal json") {
+	if !v1.LogOnError(err, "can't Unmarshal json") {
 		return
 	}
 
 	err = obj.Setup.Nats.Publish(m.Reply, data)
-	lib.LogOnError(err, "warning")
+	v1.LogOnError(err, "warning")
 }

@@ -2,7 +2,7 @@ package FetchTask
 
 import (
 	"fmt"
-	"github.com/Atluss/FetchTaskServer/lib"
+	"github.com/Atluss/FetchTaskServer/pkg/v1"
 	"sync"
 )
 
@@ -32,7 +32,7 @@ func AddToElements(obj *FetchElement) string {
 
 	var id string
 	for {
-		id = lib.RandStringRunes(8)
+		id = v1.RandStringRunes(8)
 		if !IsInElements(id) {
 			obj.ID = id
 			FetchElements[id] = *obj
@@ -63,6 +63,7 @@ func GetElementById(id string) (FetchElement, error) {
 
 }
 
+// GetListElement fetch list
 func GetListElement() []FetchElement {
 
 	ret := []FetchElement{}

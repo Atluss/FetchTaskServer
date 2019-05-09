@@ -16,8 +16,8 @@ services:
     image: golang:1.12.2
     volumes:
       - .:/go/src/FetchTaskServer
-    working_dir: /go/src/FetchTaskServer
-    command: go run api/api.go
+    working_dir: /go/src/FetchTaskServer/cmd/fetchTaskServer
+    command: go run api.go
     environment:
       - GO111MODULE=on
     depends_on:
