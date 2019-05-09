@@ -33,8 +33,8 @@ func (obj *PublicElement) SetFromElement(cl *FetchElement) {
 }
 
 // Encode encode answer
-func (t *PublicElement) Encode(w http.ResponseWriter) error {
-	err := json.NewEncoder(w).Encode(&t)
+func (obj *PublicElement) Encode(w http.ResponseWriter) error {
+	err := json.NewEncoder(w).Encode(&obj)
 	if !v1.LogOnError(err, "error: can't encode reply ReplayFetch") {
 		return err
 	}
