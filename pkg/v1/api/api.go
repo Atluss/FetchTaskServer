@@ -36,6 +36,7 @@ type ReplayBadRequest struct {
 	Description string `json:"Description"`
 }
 
+// Encode answer with status
 func (t *ReplayBadRequest) Encode(w http.ResponseWriter) error {
 	err := json.NewEncoder(w).Encode(&t)
 	if !v1.LogOnError(err, "error: can't encode replyMq ReplayFetch") {

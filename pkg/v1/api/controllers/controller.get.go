@@ -8,6 +8,7 @@ import (
 	"log"
 )
 
+// NewV1Get return endpoint new fetch element
 func NewV1Get(set *config.Setup) error {
 
 	endP, err := endpoints.NewEndPointV1Get(set)

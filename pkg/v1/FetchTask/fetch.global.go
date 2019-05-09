@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-// global map of requests
+// FetchElements map of requests
 var FetchElements map[string]FetchElement
 var mutex sync.Mutex
 
@@ -57,10 +57,8 @@ func GetElementById(id string) (FetchElement, error) {
 
 	if el, ok = FetchElements[id]; !ok {
 		return el, fmt.Errorf("no element id: %s", id)
-	} else {
-		return el, nil
 	}
-
+	return el, nil
 }
 
 // GetListElement fetch list

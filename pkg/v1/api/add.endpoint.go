@@ -8,8 +8,10 @@ type endPoint struct {
 	url string
 }
 
+// EndPoints list
 var EndPoints map[string][]endPoint
 
+// AddEndPoint to the list
 func AddEndPoint(queue, url string) {
 
 	if EndPoints == nil {

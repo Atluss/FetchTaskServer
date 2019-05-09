@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// NewEndPointV1Test constructor for /v1/test/{id}
+// NewEndPointV1List constructor for /v1/test/{id}
 func NewEndPointV1List(set *config.Setup) (*v1list, error) {
 
 	url := fmt.Sprintf("/%s/list", api.V1ApiQueue)

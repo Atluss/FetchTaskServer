@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/Atluss/FetchTaskServer)](https://goreportcard.com/report/github.com/Atluss/FetchTaskServer)
+
 ## FetchTaskServer
 
 В проекте используется [Nats](https://www.nats.io/) для создания API. И mux для frontend API
